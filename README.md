@@ -1,63 +1,92 @@
-# HyperSploit
+# HyperSploit для Linux ARM64
+
+Форк [TheAirBlow/HyperSploit](https://github.com/TheAirBlow/HyperSploit) с отдельной статической сборкой для Linux ARM64 (aarch64), в том числе для запуска в Termux без proot.
+
 > [!WARNING]
-> This exploit has been patched on newer HyperOS 2 and completely on HyperOS 3 onwards. The project will no longer be maintained, and new issues will be ignored. I am not aware of any other exploits that would help, so there is no fix.
+> Уязвимость исправлена в новых версиях HyperOS 2 и во всех версиях HyperOS 3. Оригинальный проект больше не поддерживается. Этот форк предоставляет ARM64-сборку существующей утилиты и не добавляет обход исправлений Xiaomi.
 
-This is a simple zero depedencies utility to bypass HyperOS restrictions on bootloader unlocking.
+## Скачать и запустить
 
-## Why another tool?
-1) This tool is much more user-friendly, is a single file and has zero dependencies
-2) HyperSploit ships with an older version of Settings to rollback in case you have a patched version
-3) This repo is licenced under an open-source licence instead of all rights reserved.
+В [релизе 1.1.0](https://github.com/skb8/HyperSploit-arm64/releases/tag/1.1.0) доступен только `HyperSploit-Linux-arm64`. Сборки для Windows, macOS и x86_64 в этом форке не публикуются.
 
-## Disclaimer
-Unlocking the bootloader is your responsibility. \
-By using this tool you acknowledge that:
-1) Software might stop working properly
-2) You can accidentally brick your device
-3) Data that wasn't backed up will be lost
-4) Warranty *may* be voided
+musl, среда выполнения NativeAOT и OpenSSL статически включены в исполняемый файл. Устанавливать .NET, glibc или Ubuntu/proot для запуска этой сборки не требуется. ADB устанавливается отдельно и не входит в релиз.
 
-## Requirements
-> [!NOTE]
->
-> Each account can only unlock 1 phone per year.
-1) Xiaomi must not have forced your account or device to go through qualification
-2) A valid SIM-card must be inserted with access to the internet
-3) You're running an official version of HyperOS
+1. Скачайте `HyperSploit-Linux-arm64` из релиза.
+2. Установите ADB для своей системы и добавьте его в `PATH`. В Termux: `pkg install android-tools`.
+3. Подключите устройство к доступному ADB-серверу и проверьте его через `adb devices`.
+4. В каталоге со скачанным файлом выполните:
 
-## Bypass
-1) Open developer settings and open Mi Unlock Status
-2) Request unlocking, it will for whatever reason log everything necessary to forge the binding request ourselves
-   1. Xiaomi recently patched it out - they switched to RSA with the private key unknown.
-   2. You can still rollback to an earlier Settings app though - and it works perfectly!
-   3. The tool will prompt you to try and rollback if it detects a patched version.
-3) We disable mobile internet and send a forged request
-   1. ROM version is modified to be MIUI 14 instead of HyperOS.
-   2. It might fail due to even more random and arbitrary restrictions.
-4) Use the official [unlocking tool](https://en.miui.com/unlock/index.html) and check how much you have to wait
-   1. Do not eject the SIM card as the phone will constantly contact Xiaomi's servers.
-   2. Do not bind the account to another device or re-bind the same one.
+```sh
+chmod +x HyperSploit-Linux-arm64
+./HyperSploit-Linux-arm64
+```
 
-## Error trying to downgrade the settings app
-If you get `Failure [INSTALL_FAILED_USER_RESTRICTED: Install canceled by user]` at this stage, make sure to do the following in developer options:
-1) Enable `Install via USB`
-2) Enable `USB debugging (Security Settings)`
-3) Near the end of the page, tap `Reset to default values` 5 times
-4) After more options appear, disable `Turn on system optimization` (if it still fails, you may need to reboot)
+В Termux храните исполняемый файл во внутреннем каталоге приложения, например `$HOME`, а не в общей памяти `/sdcard`.
 
-## How to use
-Note: If you're on MacOS or on Linux, install ADB and add it to `PATH`.
-1) Download latest binary from [Releases](https://github.com/TheAirBlow/HyperSploit/releases) for your OS
-2) Connect your Xiaomi device and run the executable
+Если используете собственный `adb` рядом с программой:
 
-## FAQ
-1) **Q:** Why does the unlock tool still remind me to wait for N hours? \
-   **A:** This tool only bypasses HyperOS restrictions, you still have to comply with MIUI's.
-2) **Q:** I see `Couldn't verify, wait a minute or two and try again` on my device. Why? \
-   **A:** This is normal behaviour, don't worry. We intentionally cut it off to forge a binding request ourselves.
+```sh
+chmod +x adb
+PATH="$PWD:$PATH" ./HyperSploit-Linux-arm64
+```
 
-## Licence
-This project is licenced under [Mozilla Public License Version 2.0](https://github.com/TheAirBlow/HyperSploit/blob/main/LICENCE)
+Локальный файл `/adb` исключён через `.gitignore` и не публикуется.
 
-## Credits
-- [MlgmXyysd](https://github.com/MlgmXyysd) for making [Xiaomi-HyperOS-BootLoader-Bypass](https://github.com/MlgmXyysd/Xiaomi-HyperOS-BootLoader-Bypass) on which this tool is largely based on
+### Статус проверки сборки
+
+Проверены успешная компиляция и формат ARM64 ELF: внешний загрузчик и разделяемые библиотеки не требуются. Проверка полного сценария, включая DNS, HTTPS и привязку устройства, в Termux ещё не выполнена. Статическая линковка сама по себе не заменяет настройки сети и доверенные сертификаты системы.
+
+## Требования к устройству
+
+- Официальная прошивка HyperOS, в которой уязвимость ещё не исправлена.
+- Аккаунт и устройство не должны быть принудительно направлены Xiaomi на дополнительную проверку квалификации.
+- Для телефона нужна действующая SIM-карта с доступом к мобильному интернету; для планшета — Wi-Fi.
+- По информации оригинального проекта, один аккаунт может разблокировать одно устройство в год.
+
+## Как работает обход
+
+1. Откройте настройки разработчика и раздел Mi Unlock Status, затем попробуйте привязать аккаунт.
+2. На уязвимых версиях система записывает в журнал данные, которые утилита использует для повторного запроса привязки.
+3. Утилита временно отключает подключение устройства к интернету и отправляет изменённый запрос. В исходном коде версии 1.1 строка версии `V816` заменяется на `V10`.
+4. После привязки используйте официальный [Mi Unlock](https://en.miui.com/unlock/index.html). Ограничение по времени ожидания остаётся в силе.
+
+Если данные журнала зашифрованы новым способом, утилита предлагает откатить приложение «Настройки» на встроенную старую версию. Это помогает не на всех прошивках.
+
+Во время ожидания не извлекайте SIM-карту, не перепривязывайте аккаунт и не привязывайте его к другому устройству.
+
+## Ошибка при откате приложения «Настройки»
+
+Если появляется `INSTALL_FAILED_USER_RESTRICTED: Install canceled by user`, в оригинальном проекте предлагаются следующие действия в настройках разработчика:
+
+1. Включить «Установка через USB».
+2. Включить «Отладка по USB (настройки безопасности)».
+3. Пять раз нажать «Восстановить значения по умолчанию» в нижней части страницы.
+4. После появления дополнительных пунктов отключить системную оптимизацию; при необходимости перезагрузить устройство.
+
+## Сборка из исходников
+
+Для статической сборки используйте ARM64-среду с musl, например Alpine Linux, .NET SDK 9 и пакеты `clang`, `build-base`, `cmake`, `openssl-dev`, `openssl-libs-static`, `zlib-dev`, `zlib-static`.
+
+```sh
+dotnet publish HyperSploit.csproj -c Release -r linux-musl-arm64 \
+  -p:StaticExecutable=true \
+  -p:PositionIndependentExecutable=false \
+  -p:StaticOpenSslLinking=true \
+  -p:InvariantGlobalization=true
+```
+
+Результат: `bin/Release/net9.0/linux-musl-arm64/publish/HyperSploit`. Файл `.dbg` для запуска не нужен. Эта конфигурация использует инвариантную глобализацию и не требует ICU.
+
+## Ответственность
+
+Разблокировка загрузчика выполняется на ваш риск. Возможны потеря данных, проблемы с приложениями, повреждение устройства и потеря гарантии. Сначала сохраните резервную копию данных.
+
+Утилита не отменяет срок ожидания Mi Unlock. Сообщение «Couldn't verify, wait a minute or two and try again» на устройстве может появляться, когда утилита намеренно прерывает исходный запрос.
+
+## Лицензия и авторы
+
+Код распространяется по [Mozilla Public License 2.0](LICENCE).
+
+- [TheAirBlow](https://github.com/TheAirBlow/HyperSploit) — автор HyperSploit.
+- [MlgmXyysd](https://github.com/MlgmXyysd/Xiaomi-HyperOS-BootLoader-Bypass) — автор проекта, на котором основан HyperSploit.
+- [skb8](https://github.com/skb8) — этот форк и публикация ARM64-сборки.
